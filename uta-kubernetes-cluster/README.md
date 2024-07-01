@@ -15,7 +15,7 @@ As a minimum, for the default cluster with a control plane and two worker nodes,
 To log into your cluster after the provisioning, use Putty and ssh into the control plane (192.168.156.30) as user 'ansible' and initial password 'ansible'. 
 Then to view your cluster run:
 
-$ cd ~/bin && ll && kubectl get node -o wide
+$ cd ~/bin && ls -l && kubectl get node -o wide
 
 To learn about the magic of Kubernetes, visit https://kubernetes.io.
 
