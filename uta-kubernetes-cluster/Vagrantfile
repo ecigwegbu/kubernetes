@@ -2,7 +2,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# Unix Training Academy Lab Manager™ version 2.0.0-beta (Kubernetes Cluster - Windows/Powershell edition)
+# Unix Training Academy Lab Manager™ version 2.0.0 (Kubernetes Cluster - Windows/Powershell edition)
 #
 # README:
 #
@@ -93,7 +93,7 @@
 # If you are stuck and need to start over, first run: vagrant destroy -f
 # For help using vagrant: vagrant -h
 # 
-# For updates, checkout: GitHub: https://github.com/ecigwegbu/kubernetes/blob/main/uta-lab-manager/Vagrantfile
+# For updates, checkout: GitHub: https://github.com/ecigwegbu/kubernetes/blob/main/uta-kubernetes-cluster/Vagrantfile
 #
 # Author: Elias C. Igwegbu, B.ENG, MBA, MNSE, SWE-ALX/Holberton, RHCSA, AWS-CCP
 # Lab Manager™ © 2024 Unix Training Academy. All Rights Reserved.
@@ -590,7 +590,7 @@ config.vm.define "kmaster" do |kmaster|
 
       # Configure the Kubernetes Cluster
       su ansible -c "mkdir -p /home/ansible/bin"
-      su ansible -c "ansible all -i kmaster, -m get_url -a 'url=https://github.com/ecigwegbu/kubernetes/raw/main/uta-lab-manager/ansible-playbooks.tar.gz dest=/home/ansible/bin mode=0755 owner=ansible group=ansible'"
+      su ansible -c "ansible all -i kmaster, -m get_url -a 'url=https://github.com/ecigwegbu/kubernetes/raw/main/uta-kubernetes-cluster/ansible-playbooks.tar.gz dest=/home/ansible/bin mode=0755 owner=ansible group=ansible'"
       su ansible -c "ansible all -i kmaster, -m unarchive -a 'src=/home/ansible/bin/ansible-playbooks.tar.gz dest=/home/ansible/bin mode=0755 owner=ansible group=ansible remote_src=yes'"
       su ansible -c "ansible-playbook /home/ansible/bin/playk.yml"
       su ansible -c "/home/ansible/bin/post-install.sh > /home/ansible/bin/post-install.log"
