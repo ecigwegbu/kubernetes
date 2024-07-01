@@ -12,7 +12,7 @@ Updates and upgrades are expected in the near future, with more formal documenta
 
 Note: For system requirements and important usage formation, please PLEASE READ THE GUIDANCE NOTES at the top of the Vagrantfile.
 As a minimum, for the default cluster with a control plane and two worker nodes, you will require a Windows PC with at leaset 4 CPUs and 40GB of free disk space.
-To log into your cluster after the provisioning, use Putty and ssh into the control plane (192.168.156.30) as user 'ansible' and initial password 'ansible'. 
+To log into your cluster after the provisioning, use Putty and ssh into the control plane (192.168.56.30) as user 'ansible' and initial password 'ansible'. 
 Then to view your cluster run:
 
 $ cd ~/bin && ls -l && kubectl get node -o wide
