@@ -1,0 +1,639 @@
+# encoding: UTF-8
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Unix Training Academy Lab Manager™ version 2.0.0-beta (Kubernetes Cluster - Windows/Powershell edition)
+#
+# README:
+#
+# This Vagrantfile provisions a Kubernetes Cluster for the Unix Training Academy training lab.
+# The lab consists of a RHEL9 workstation
+# and one or more other RHEL9 servers, named knodea, knodeb, etc (default: kmaster + 2 others knodes), up to 
+# a maximum of 26 knodes + kmaster, limited by your system's memory. kmaster uses 2 GB of RAM while
+# the other knodes also use 2 GB of RAM each. (Warning: exceeding 4 knodes could run down your system's memory).
+#
+# Three users, vagrant, student, and ansible, are defined in each VM (with initial passwords same as username).
+# By default, for user vagrant, Vagrant provides password-less key-based ssh login from Windows (this version 
+# is for Windows host only) to each VM. The three users can use sudo within the VMs without password.
+#
+# Users student and ansible have password-based ssh login from the host OS (Windows), for each VM. In addition,
+# student and ansible can ssh from any VM to any other VM without a password. 
+# Finally, for user ansible, worstation also serves as an Ansible Control Node, while knodes knodea,
+# knodeb etc serve as Kubernets workers / Ansible managed hosts with password-less ssh connection.
+#
+# Ansible is installed on the Control Node (kmaster), with pre-loaded initial inventory file at 
+# /etc/ansible/inventory and config file at /etc/ansible/ansible.cfg. The ungrouped hosts in the inventory
+# include the ip addresses, short names and fqdn of all managed hosts. The Control Node (kmaster) is 
+# accessible as localhost in Ansible. Only the fqdn are used in the host groups in the inventory file. 
+# This arrangement ensures that Ansible can connect to either the ips, short names or fqdns without complaint.
+# The default Ansible remote user is ansible. Privilege escalation to root is password-less,
+# and set to false by default.
+#
+# To use the Vagrantfile (Lab Manager), first download and install Oracle VirtualBox and Vagrant from their respective 
+# websites, and start VirtualBox. Then start PowerShell as Administrator and enter the command:
+# vagrant up
+# The Lab Manager will then begin to provision the workstation and (by default) two managed hosts - knodea and knodeb.
+# To provision other than two managed hosts (e.g. 1, 3, 4 or more managed hosts), modify the command thus:
+# $env:MANAGED_HOSTS=4; vagrant up                   [Note: $ is part of the command]
+# The above example will then provision the workstation and 4 other managed hosts (knodea, knodeb, knodec
+# and knoded). The system will record the specified number of hosts in its config file (./.vagrant/.utalab/config.uta)
+# for use the next time you run vagrant. You can manaully modify the config file, though this is not recommended.
+# Warning: Your system could run out of memory if you try to provision too many knodes. While the Lab Manager can
+# handle up to 27 knodes (workstation + 26 managed hosts), the practical limit will depend on the available RAM.
+# Workstation uses 2GB RAM while the managed hosts use 1.5GB RAM each. For an 8GB system, for example, do not try to exceed
+# 4 managed hosts).
+# 
+# The Lab Manager will also prompt you for the Red Hat Subscription Mangager username and password. This is required
+# in order to install required software in the knodes being provisioned. If you fail to provide these the program
+# will abort. The username and password you provide interactively will be encrypted and securely stored in your project
+# directory for use the next time you run vagrant, such that the system will not prompt you again. However if
+# you want to use a different set of credentials you can modify the vagrant command thus:
+# $env:REDHAT_USERNAME='your-username'; $env:REDHAT_PASSWORD='your-redhat-password'; vagrant up
+# (Of course you can add the MANAGED_HOSTS to the same command line as well if you wish). Credentials provided on the
+# command-line override, and will then replace, the previous cached one for use next time you run vagrant.
+# 
+# The Lab Manager provides the following shared folder mapping between your Windows host and the workstation VM:
+# Windows folder: ./workstation_shared    (this is located in your project directory)
+# Red Hat Linux server 'kmaster' directory: /windows_shared
+# Files saved in either directory can be read from the other by the student user.
+# Note: Your project directory is any directory you choose yourself for your project data; 
+# Vagrantfile must be located within it. If the shared directory does not exist, the Lab Manager will create it.
+# 
+# The first time you run Vagrantfile, it may automatically download the box image from its online repository,
+# so the process may take longer than usual. This image is Vagrant-specific box image for the VirtualBox
+# provider (e.g. 'generic/rhel9' available from Vagrant Cloud). (Note: A Red Hat .iso image is not required.)
+#
+# Once the provisioning ends, you can use an SSH client like Putty to connect from Windows to any of the  
+# servers, and as any of the three users - student, ansible or vagrant. The server's ip address are:
+# 192.168.56.30 (kmaster), 192.168.56.31 (knodea), 192.168.56.32 (knodeb) etc. In addition, 
+# user vagrant can also connect password-less from Putty using the private key stored at:
+# '.vagrant\machines\<server-name>\virtualbox\private_key'. (Note: Only user vagrant has key-based
+# SSH login from Windows, using a client like Putty.) 
+# 
+# You can also connect to any of the servers using the default vagrant account from PowerShell:
+# vagrant ssh kmaster
+# You will be automatically logged in as user vagrant (password not required).
+# Once logged in, you can su to user student or ansible and can then freely ssh from one server to another 
+# as user student or ansible. It is recommended to use user student for all routine tasks.
+#
+# My recommended approach is to login directly as user student, and password student, using Putty.
+# Users student and ansible have password-based login from the Windows host using Putty (for example),
+# and can do ssh password-less key-based connections from any VM to any of the provisioned VMs once logged into
+# any VM.
+#
+# To end a session without destroying the servers:
+# vagrant suspend (to save/suspend the VM), or
+# vagrant halt (to power off the VM)
+# Warning: Do NOT run 'vagrant destroy' unless you wish to destroy the VMs (eg at the end 
+# of a project/course after backing up your data)
+#
+# To resume a suspended VM: vagrant resume
+# To restart a halted VM: vagrant up
+# To halt and restart a VM: vagrant reload
+# If you are stuck and need to start over, first run: vagrant destroy -f
+# For help using vagrant: vagrant -h
+# 
+# For updates, checkout: GitHub: https://github.com/ecigwegbu/kubernetes/blob/main/uta-lab-manager/Vagrantfile
+#
+# Author: Elias C. Igwegbu, B.ENG, MBA, MNSE, SWE-ALX/Holberton, RHCSA, AWS-CCP
+# Lab Manager™ © 2024 Unix Training Academy. All Rights Reserved.
+
+## Lab Manager™ begin...
+
+require 'io/console'
+require 'fileutils'
+
+puts "\nLab Manager\u2122 version 2.0-beta - Kubernetes Cluster\n\u00A9 2024 Unix Training Academy. All Rights Reserved...\n\n"
+
+# Attempt to read the MANAGED_HOSTS environment variable,
+# then try the config file, then finally default to DEFAULT_MANAGED_HOSTS if none found
+DEFAULT_MANAGED_HOSTS = 2
+
+# Ensure the workstation_shared directory exists
+Dir.mkdir("./workstation_shared") unless Dir.exist?("./workstation_shared")
+
+# Ensure the .utalab directory exists
+Dir.mkdir("./.vagrant/.utalab") unless Dir.exist?("./.vagrant/.utalab")
+config_file_path = './.vagrant/.utalab/config.uta'
+
+# Utility method to read the managed hosts count from the config file
+def read_managed_hosts_from_config(file_path, default)
+  managed_hosts = default
+  if File.exist?(file_path)
+    File.foreach(file_path) do |line|
+      if line.strip.start_with?('managed_hosts')
+        # Remove potential quotes and convert to integer
+        managed_hosts_value = line.split('=')[1].tr("'", "").tr('"', '').strip
+        converted_value = managed_hosts_value.to_i
+        # Check if conversion results in 0 and the original value is not actually "0"
+        if converted_value == 0 && managed_hosts_value != "0"
+          puts "Warning: invalid value found for 'managed_hosts' in config file."
+          puts "Using the default value (#{default})..."
+          managed_hosts = default
+        else
+          managed_hosts = converted_value
+        end
+        break
+      end
+    end
+  end
+  managed_hosts
+end
+
+# Utility method to write the managed hosts count to the config file
+def write_managed_hosts_to_config(file_path, count)
+  FileUtils.mkdir_p(File.dirname(file_path)) unless File.directory?(File.dirname(file_path))
+  File.open(file_path, 'w') do |file|
+    file.puts "[defaults]"
+    file.puts "managed_hosts=#{count}"
+  end
+end
+
+# Check if ENV['MANAGED_HOSTS'] exists and is a valid integer
+if ENV['MANAGED_HOSTS'] && ENV['MANAGED_HOSTS'].to_i > 0
+  number_managed_hosts = ENV['MANAGED_HOSTS'].to_i
+  write_managed_hosts_to_config(config_file_path, number_managed_hosts)
+elsif File.exist?(config_file_path)
+  number_managed_hosts = read_managed_hosts_from_config(config_file_path, DEFAULT_MANAGED_HOSTS)
+else
+  # The default value is already set to DEFAULT_MANAGED_HOSTS, but let's ensure it's also persisted to the config file.
+  number_managed_hosts = DEFAULT_MANAGED_HOSTS
+  write_managed_hosts_to_config(config_file_path, number_managed_hosts)
+end
+# Validate the number of managed hosts to be between 1 and 26, inclusive
+number_managed_hosts = number_managed_hosts.between?(1, 26) ? number_managed_hosts : DEFAULT_MANAGED_HOSTS
+
+# Now you can use `number_managed_hosts` in your Vagrant configuration as needed.
+puts "Number of managed hosts: #{number_managed_hosts}"
+
+## Now process Red Hat username and password input
+# Check if the REDHAT_USERNAME environment variable is set
+if ENV['REDHAT_USERNAME'] && ENV['REDHAT_PASSWORD']
+  # Get the Red Hat username and password from the ENV variables (permanent or command line)
+  redhat_username = ENV['REDHAT_USERNAME']
+  redhat_password = ENV['REDHAT_PASSWORD']
+  # Then encrypt and store it
+
+  # Username and Password received. Now encrypt and store them
+  # PowerShell script to encrypt credentials and save them to files
+  encrypt_username_script = %(
+    $Username = '#{redhat_username}'
+    $EncryptedUsername = ConvertTo-SecureString $Username -AsPlainText -Force | ConvertFrom-SecureString
+    Set-Content -Path "./.vagrant/.utalab/vtYrd4ErWoa.uta" -Value $EncryptedUsername
+  )
+  encrypt_password_script = %(
+    $Password = '#{redhat_password}'
+    $EncryptedPassword = ConvertTo-SecureString $Password -AsPlainText -Force | ConvertFrom-SecureString
+    Set-Content -Path "./.vagrant/.utalab/vtYrd4ErWob.uta" -Value $EncryptedPassword
+  )
+  # Execute PowerShell scripts
+  `powershell -Command "#{encrypt_username_script}"`
+  `powershell -Command "#{encrypt_password_script}"`
+  # Note: The above code snippets are Ruby strings that contain PowerShell commands. They are passed to the PowerShell interpreter for execution.
+
+  puts "\nREDHAT_USERNAME / REDHAT_PASSWORD loaded, pending validation...\n\n"
+elsif File.exist?('./.vagrant/.utalab/vtYrd4ErWoa.uta') && File.exist?('./.vagrant/.utalab/vtYrd4ErWob.uta')
+  # Proceed with decryption of credentials
+  # Define the full path to the encrypted files using Ruby
+  encrypted_username_path = File.expand_path('./.vagrant/.utalab/vtYrd4ErWoa.uta', __dir__)
+  encrypted_password_path = File.expand_path('./.vagrant/.utalab/vtYrd4ErWob.uta', __dir__)
+
+  # PowerShell script to decrypt credentials
+  decrypt_script = %(
+    $EncryptedUsernamePath = '#{encrypted_username_path.gsub('/', '\\')}'
+    $EncryptedPasswordPath = '#{encrypted_password_path.gsub('/', '\\')}'
+  
+    $EncryptedUsername = Get-Content -Path $EncryptedUsernamePath | ConvertTo-SecureString
+    $EncryptedPassword = Get-Content -Path $EncryptedPasswordPath | ConvertTo-SecureString
+  
+    $BSTRUsername = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($EncryptedUsername)
+    $BSTRPassword = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($EncryptedPassword)
+  
+    $PlainUsername = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTRUsername)
+    $PlainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTRPassword)
+  
+    Write-Output $PlainUsername
+    Write-Output $PlainPassword
+  )
+  # Execute PowerShell script and capture output
+  credentials = `powershell -Command "#{decrypt_script}"`.split("\n")
+  redhat_username = credentials[0]
+  redhat_password = credentials[1]
+else
+  puts "Red Hat subscription-manager username and password are not set."
+  puts "They are required in order to install packages from Red Hat.\n\n"
+  puts "Enter REDHAT_USERNAME (or press Enter to exit):"
+
+  # Prompt the user for input for REDHAT_USERNAME
+  user_input = STDIN.gets.chomp
+
+  # Exit if the user did not provide any input
+  if user_input.empty?
+    puts "No input provided. Exiting..."
+    exit
+  else
+    # Use the provided input as REDHAT_USERNAME value for this session
+    redhat_username = user_input
+  end
+
+  # Prompt the user for input for REDHAT_PASSWORD
+  puts "Enter REDHAT_PASSWORD (or press Enter to exit):"
+  
+  # Masking the input for REDHAT_PASSWORD
+  user_input = STDIN.noecho(&:gets).chomp
+
+  # Exit if the user did not provide any input
+  if user_input.empty?
+    puts "\nNo input provided. Exiting..."
+    exit
+  else
+    # Use the provided input as REDHAT_PASSWORD value for this session only
+    redhat_password = user_input
+  end
+
+  # Username and Password received. Now encrypt and store them
+  # PowerShell script to encrypt credentials and save them to files
+  encrypt_username_script = %(
+    $Username = '#{redhat_username}'
+    $EncryptedUsername = ConvertTo-SecureString $Username -AsPlainText -Force | ConvertFrom-SecureString
+    Set-Content -Path "./.vagrant/.utalab/vtYrd4ErWoa.uta" -Value $EncryptedUsername
+  )
+  encrypt_password_script = %(
+    $Password = '#{redhat_password}'
+    $EncryptedPassword = ConvertTo-SecureString $Password -AsPlainText -Force | ConvertFrom-SecureString
+    Set-Content -Path "./.vagrant/.utalab/vtYrd4ErWob.uta" -Value $EncryptedPassword
+  )
+  # Execute PowerShell scripts
+  `powershell -Command "#{encrypt_username_script}"`
+  `powershell -Command "#{encrypt_password_script}"`
+  # Note: The above code snippets are Ruby strings that contain PowerShell commands. They are passed to the PowerShell interpreter for execution.
+
+  puts "\nRed Hat username and password loaded, pending validation...\n\n"
+end
+
+# Create the Global variables
+ANSIBLE_CFG = <<~HEREDOC
+  [defaults]
+  inventory=/etc/ansible/inventory
+  remote_user=ansible
+  become=false
+  ask_pass=false
+  become_user=root
+  become_ask_pass=false
+HEREDOC
+
+ANSIBLE_INVENTORY_1 = <<~HEREDOC
+  [webservers]
+  knodea.lab.uta.com
+  [app]
+  knodea.lab.uta.com
+  [db]
+  [usa]
+  knodea.lab.uta.com
+  [canada]
+  [k8snodes]
+  kmaster
+  knodea
+  [k8sworkers]
+  knodea
+HEREDOC
+
+ANSIBLE_INVENTORY_2 = <<~HEREDOC
+  [webservers]
+  knodea.lab.uta.com
+  [app]
+  knodeb.lab.uta.com
+  [db]
+  knodeb.lab.uta.com
+  [usa]
+  knodea.lab.uta.com
+  [canada]
+  knodeb.lab.uta.com
+  [k8snodes]
+  kmaster
+  knodea
+  knodeb
+  [k8sworkers]
+  knodea
+  knodeb
+HEREDOC
+
+ANSIBLE_INVENTORY_3 = <<~HEREDOC
+  [webservers]
+  knodea.lab.uta.com
+  knodeb.lab.uta.com
+  [app]
+  knodec.lab.uta.com
+  [db]
+  knodec.lab.uta.com
+  [usa]
+  knodea.lab.uta.com
+  knodeb.lab.uta.com
+  [canada]
+  knodec.lab.uta.com
+  [k8snodes]
+  kmaster
+  knodea
+  knodeb
+  knodec
+  [k8sworkers]
+  knodea
+  knodeb
+  knodec
+HEREDOC
+
+ANSIBLE_INVENTORY_4 = <<~HEREDOC
+  [webservers]
+  knodea.lab.uta.com
+  knodeb.lab.uta.com
+  [app]
+  knodec.lab.uta.com
+  [db]
+  knoded.lab.uta.com
+  [usa]
+  knodea.lab.uta.com
+  knodeb.lab.uta.com
+  knodec.lab.uta.com
+  [canada]
+  knoded.lab.uta.com
+  [k8snodes]
+  kmaster
+  knodea
+  knodeb
+  knodec
+  knoded
+  [k8sworkers]
+  knodea
+  knodeb
+  knodec
+  knoded
+HEREDOC
+
+# Build ETC_HOSTS data - sample: ip knodea knodea.lab.uta.com...
+ETC_HOSTS_LIST = "192.168.56.30 kmaster kmaster.lab.uta.com\n" + \
+  (1..number_managed_hosts).map { |i| "192.168.56.#{(30 + i)}" + \
+  " knode#{('a'.ord + i - 1).chr}" + \
+  " knode#{('a'.ord + i - 1).chr}.lab.uta.com" }.join("\n")
+puts "Hosts List:\n" + ETC_HOSTS_LIST
+puts
+
+# Build INVENTORY_UNGROUPED data - sample: ip\n knodea\n knodea.lab.uta.com\n...
+INVENTORY_UNGROUPED_LIST = (1..number_managed_hosts).map { |i| "192.168.56.#{(30 + i)}\n" + \
+  "knode#{('a'.ord + i - 1).chr}\n" + \
+  "knode#{('a'.ord + i - 1).chr}.lab.uta.com\n" }.join("\n")
+
+# Build SERVER_LIST data - sample: knodea\n knodeb\n ...
+SERVER_LIST = (1..number_managed_hosts).map { |i| " knode#{('a'.ord + i - 1).chr}" }.join("\n")
+
+# Build KNOWN_HOSTS_LIST data - sample: knodea\n knodeb\n ...
+KNOWN_HOSTS_LIST = "192.168.56.30\nkmaster\nkmaster.lab.uta.com\n" + \
+(1..number_managed_hosts).map { |i| "192.168.56.#{(30 + i)}\n" + \
+"knode#{('a'.ord + i - 1).chr}\n" + \
+"knode#{('a'.ord + i - 1).chr}.lab.uta.com" }.join("\n")
+
+# Generate a random 3-digit number - identifier for this session
+random_number = sprintf('%03d', rand(0..999))
+Vagrant.configure("2") do |config|
+
+puts "Red Hat user: #{redhat_username}\n\n"
+# Dynamically create managed host VMs
+(1..number_managed_hosts).each do |i|
+  config.vm.define "knode#{('a'.ord + i - 1).chr}" do |knode|
+    knode.vm.box = "generic/rhel9"
+    # Adjust hostname to incorporate new naming convention with random number
+    knode.vm.hostname = "knode#{('a'.ord + i - 1).chr}.lab.uta.com"
+    knode.vm.network "private_network", ip: "192.168.56.#{30 + i}"
+    knode.vm.network "forwarded_port", guest: 22, host: 2273 + i, id: "ssh"
+    knode.vm.network "forwarded_port", guest: 30000, host: 30000 + i, id: "api"
+
+    # Customise VM memory and display name
+    knode.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"  # Set the VM to use 2 GB of RAM   
+      # vb.cpus = 2  # Try 2 CPUs 
+      # Adjust vb.name to include random number and follow the new naming convention
+      vb.name = "UTA-#{random_number}-knode#{('a'.ord + i - 1).chr}"
+      # vb.gui = true  # for debugging
+    end
+
+      # Enable password authentication and reload SSHD
+      knode.vm.provision "shell", inline: <<-SHELL
+        sudo sed -i.bak 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+        sudo systemctl reload sshd
+        # Register the system with Red Hat Subscriotion Management
+        echo "Registering the system with subscription-manager..."
+        subscription-manager register --username="$(echo -e '#{redhat_username}')" --password="$(echo -e '#{redhat_password}')"
+        if [ $? -eq 0 ]; then
+          echo "#{knode.vm.hostname} registered successfully.\nRegistering insights-client..."
+          insights-client --register > /dev/null 2>&1 &
+          echo "Done."
+        else
+          echo "System registration failed. Please check your credentials or network connectivity."
+          exit 1
+        fi
+        # Set root password to 'redhat'
+        echo 'redhat' | passwd root --stdin
+
+        # Provision a new 'student' user
+        # Create the student user with a home directory and password 'student'
+        student_password=$(openssl passwd -6 -salt "UTAisTheBest" "student")
+        useradd -m -d /home/student -p "${student_password}" -s /bin/bash -G vagrant student
+        # Give student passwordless sudo privileges
+        echo "student ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/student
+
+        # Populate etc/hosts
+        echo "\n#{ETC_HOSTS_LIST}" >> /etc/hosts
+
+        # User 'ansible'
+        # Create the ansible user with a home directory and password 'ansible'
+        ansible_password=$(openssl passwd -6 -salt "UTAisTheBest" "ansible")
+        useradd -m -d /home/ansible -p "${ansible_password}" -s /bin/bash -G vagrant ansible
+        # Give ansible passwordless sudo privileges
+        echo "ansible ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/ansible
+
+      SHELL
+    end
+  end
+
+# kmaster configuration
+config.vm.define "kmaster" do |kmaster|
+  kmaster.vm.box = "generic/rhel9"
+  kmaster.vm.hostname = "kmaster.lab.uta.com"
+  kmaster.vm.network "private_network", ip: "192.168.56.30"
+  kmaster.vm.network "forwarded_port", guest: 22, host: 2273, id: "ssh"
+  kmaster.vm.network "forwarded_port", guest: 30000, host: 30000, id: "api"
+  kmaster.vm.synced_folder "./workstation_shared", "/windows_shared"
+
+  # Customise VM memory and display name with random number
+  kmaster.vm.provider "virtualbox" do |vb|
+    vb.memory = "2048"  # Set the VM to use 2 GB of RAM
+    # Include the random number in the name following the new naming convention
+    vb.name = "UTA-#{random_number}-kmaster"
+    # vb.gui = true  # for debugging
+  end
+
+    # Enable password authentication and reload SSHD
+    kmaster.vm.provision "shell", inline: <<-SHELL
+      sudo sed -i.bak 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+      sudo systemctl reload sshd
+      # Register the system (using placeholder credentials)
+      echo "Registering the system with subscription-manager..."
+      subscription-manager register --username="$(echo -e '#{redhat_username}')" --password="$(echo -e '#{redhat_password}')"
+      if [ $? -eq 0 ]; then
+        echo "#{kmaster.vm.hostname} registered successfully.\nRegistering insights-client..."
+        insights-client --register > /dev/null 2>&1 &
+        echo "Done."
+      else
+        echo "System registration failed. Please check your credentials or network connectivity."
+        exit 1
+      fi
+
+      # Populate etc/hosts on kmaster
+      echo "\n#{ETC_HOSTS_LIST}" > /tmp/etc_hosts_vtYrd4ErWo
+      cat /tmp/etc_hosts_vtYrd4ErWo >> /etc/hosts
+
+      # Set root password to 'redhat'
+      echo 'redhat' | passwd root --stdin
+
+      # Provision a new 'student' user
+      # Create the student user with a home directory and password 'student'
+      student_password=$(openssl passwd -6 -salt "UTAisTheBest" "student")
+      useradd -m -d /home/student -p "${student_password}" -s /bin/bash -G vagrant student
+      # Give student passwordless sudo privileges
+      echo "student ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/student
+      # Generate SSH credentials for user student
+      su student -c "ssh-keygen -b 2048 -t rsa -f /home/student/.ssh/id_rsa -q -N ''"
+      su student -c "cat /home/student/.ssh/id_rsa.pub >> /home/student/.ssh/authorized_keys"
+      chmod 600 /home/student/.ssh/authorized_keys
+
+      # User 'ansible'
+      # Create the ansible user with a home directory and password 'ansible'
+      ansible_password=$(openssl passwd -6 -salt "UTAisTheBest" "ansible")
+      useradd -m -d /home/ansible -p "${ansible_password}" -s /bin/bash -G vagrant ansible
+      # Give ansible passwordless sudo privileges
+      echo "ansible ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/ansible
+      # Generate SSH credentials for user ansible
+      su ansible -c "ssh-keygen -b 2048 -t rsa -f /home/ansible/.ssh/id_rsa -q -N ''"
+      su ansible -c "cat /home/ansible/.ssh/id_rsa.pub >> /home/ansible/.ssh/authorized_keys"
+      chmod 600 /home/ansible/.ssh/authorized_keys
+
+      # Install Ansible and sshpass
+      echo
+      if [[ "$(dnf repolist | grep '^rhel-9' | wc -l)" -eq 0 ]]; then
+        rhel9_repo_exists="false"
+        echo "WARNING:"
+        echo "RHEL 9 Repository not found."
+        echo "Check registration/subscription with Red Hat."
+        echo "Continuing without installing Ansible and related features..."
+        echo
+      else
+        rhel9_repo_exists="true"
+        echo "Installing Ansible..."
+        echo
+        # dnf upgrade -y
+        dnf makecache
+        dnf -y install epel-release
+        dnf -y install ansible sshpass
+        ansible --version
+
+        # Create the Ansible Config file
+        echo "#{ANSIBLE_CFG}" > /etc/ansible/ansible.cfg
+        
+        # Create the Ansible Inventory file
+        # First populate Ungrouped hosts
+        echo "#{INVENTORY_UNGROUPED_LIST}" >> /etc/ansible/inventory  
+        # Then the host groups (for maximum of four managed nodess) 
+        number_managed_hosts="#{number_managed_hosts}"
+        if [[ "$number_managed_hosts" -eq 1 ]]; then
+          echo "#{ANSIBLE_INVENTORY_1}" >> /etc/ansible/inventory
+        elif [[ "$number_managed_hosts" -eq 2 ]]; then
+          echo "#{ANSIBLE_INVENTORY_2}" >> /etc/ansible/inventory
+        elif [[ "$number_managed_hosts" -eq 3 ]]; then
+          echo "#{ANSIBLE_INVENTORY_3}" >> /etc/ansible/inventory
+        else
+          echo "#{ANSIBLE_INVENTORY_4}" >> /etc/ansible/inventory
+        fi
+      fi
+
+      # Populate the known hosts file on kmaster for users student and ansible
+      echo "#{KNOWN_HOSTS_LIST}" > /tmp/known_hosts_vtYrd4ErWo
+      ssh-keyscan  -f /tmp/known_hosts_vtYrd4ErWo | su student -c "tee -a /home/student/.ssh/known_hosts" | su ansible -c "tee -a /home/ansible/.ssh/known_hosts" > /dev/null
+      chmod 600 /home/student/.ssh/known_hosts /home/ansible/.ssh/known_hosts
+
+      # Update the managed hosts
+      knode_list_str="#{SERVER_LIST}"
+
+      for knode in $knode_list_str; do
+        if [[ "${rhel9_repo_exists}" == "true" ]]; then
+          # Copy the public key to managed hosts to enable key-based ssh authentication
+          su student -c "sshpass -p 'student' ssh-copy-id -o StrictHostKeyChecking=no student@${knode}"
+          su ansible -c "sshpass -p 'ansible' ssh-copy-id -o StrictHostKeyChecking=no ansible@${knode}"
+          # Copy ETC_HOSTS to knode
+          su student -c "ansible -i ${knode}, all -u student -m copy -a 'src=/tmp/etc_hosts_vtYrd4ErWo dest=/tmp/etc_hosts_vtYrd4ErWo'"
+          su student -c "ansible -i ${knode}, all -u student -m shell -a 'cat /tmp/etc_hosts_vtYrd4ErWo | sudo tee -a /etc_hosts > /dev/null && rm -f /tmp/etc_hosts_vtYrd4ErWo'"
+          # Copy over id_rsa and id_rsa.pub to enable ssh FROM those knodes to any other knode
+          su student -c "ansible -i ${knode}, all -u student -m copy -a 'src=/home/student/.ssh/id_rsa dest=/home/student/.ssh/id_rsa mode=0600 owner=student group=student' --become"
+          su student -c "ansible -i ${knode}, all -u student -m copy -a 'src=/home/student/.ssh/id_rsa.pub dest=/home/student/.ssh/id_rsa.pub mode=0644 owner=student group=student' --become"
+          su ansible -c "ansible -i ${knode}, all -m copy -a 'src=/home/ansible/.ssh/id_rsa dest=/home/ansible/.ssh/id_rsa mode=0600 owner=ansible group=ansible' --become"
+          su ansible -c "ansible -i ${knode}, all -m copy -a 'src=/home/ansible/.ssh/id_rsa.pub dest=/home/ansible/.ssh/id_rsa.pub mode=0644 owner=ansible group=ansible' --become"
+        fi
+
+        # Copy over the comprehensive known hosts file to the managed hosts
+        su student -c "scp -q -o StrictHostKeyChecking=no /home/student/.ssh/known_hosts $knode:/home/student/.ssh/known_hosts"
+
+        su ansible -c "scp -q -o StrictHostKeyChecking=no /home/ansible/.ssh/known_hosts $knode:/home/ansible/.ssh/known_hosts"
+
+      done
+      rm -f /tmp/etc_hosts_vtYrd4ErWo /tmp/known_hosts_vtYrd4ErWo
+
+      # Configure kmaster for Guided Exercises
+      su student -c "cp /usr/bin/zcat /home/student"
+
+      # Configure the Kubernetes Cluster
+      su ansible -c "mkdir -p /home/ansible/bin"
+      su ansible -c "ansible all -i kmaster, -m get_url -a 'url=https://github.com/ecigwegbu/kubernetes/raw/main/uta-lab-manager/ansible-playbooks.tar.gz dest=/home/ansible/bin mode=0755 owner=ansible group=ansible'"
+      su ansible -c "ansible all -i kmaster, -m unarchive -a 'src=/home/ansible/bin/ansible-playbooks.tar.gz dest=/home/ansible/bin mode=0755 owner=ansible group=ansible remote_src=yes'"
+      su ansible -c "ansible-playbook /home/ansible/bin/playk.yml"
+      su ansible -c "/home/ansible/bin/post-install.sh > /home/ansible/bin/post-install.log"
+      su ansible -c "cat /home/ansible/bin/aliases >> /home/ansible/.bashrc"
+      
+      # Display SUMMARY and exit
+      echo
+      echo "***SESSION SUMMARY***"
+      if [[ "${rhel9_repo_exists}" == "true" ]]; then
+        echo "UTA Lab installation and configuration completed"
+        echo "for Red Hat user #{redhat_username}."
+      else
+        echo "UTA Lab provisioning completed but Ansible installation and"
+        echo "and SSH configuration could not be completed due to problems with"
+        echo "the Red Hat subscription. Visit access.redhat.com and ensure you"
+        echo "have a Red Hat subscription with Simple Content Access enabled."
+      fi
+      echo
+      echo "Hosts List:"
+      echo "#{ETC_HOSTS_LIST}"
+      echo
+      echo "Try using Putty (recommended) to login to kmaster (ip address"
+      echo "192.168.56.30 on port 22) as user student, password 'student'."
+      echo
+      echo "Alternatively, login to kmaster as user vagrant from here; run:"
+      echo "vagrant ssh kmaster"
+      echo "and switch user to student with password 'student' once logged in."
+      echo
+      echo "***UTA Lab Manager™ version 1.0.5-beta. End of Session***"
+    SHELL
+
+    # Other kmaster configuration here...
+
+  end
+  @start_time = Time.now
+  at_exit {
+    end_time=Time.now 
+    duration_seconds = (end_time - @start_time).ceil
+    duration_minutes = duration_seconds.to_i / 60
+    remaining_seconds = duration_seconds.to_i % 60
+    puts "Total run time: #{duration_minutes} min, #{remaining_seconds} sec."
+    puts
+  }
+  # Other global configuration if needed...
+
+end
