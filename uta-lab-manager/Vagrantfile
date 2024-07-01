@@ -587,12 +587,14 @@ config.vm.define "kmaster" do |kmaster|
 
       # Configure kmaster for Guided Exercises
       su student -c "cp /usr/bin/zcat /home/student"
+
+      # Configure the Kubernetes Cluster
       su ansible -c "mkdir -p /home/ansible/bin"
-      # su ansible -c "cp /windows_shared/kubernetes/k8sv4/* /home/ansible/bin"
-      su ansible -c "ansible -i localhost, all -m unarchive -a 'src=https://github.com/ecigwegbu/kubernetes/raw/main/uta-lab-manager/ansible-playbooks.tar.gz' dest='/home/ansible/bin mode=0755 owner=ansible group=ansible' remote_src=yes"
+      su ansible -c "ansible all -i kmaster, -m get_url -a 'url=https://github.com/ecigwegbu/kubernetes/raw/main/uta-lab-manager/ansible-playbooks.tar.gz dest=/home/ansible/bin mode=0755 owner=ansible group=ansible'"
+      su ansible -c "ansible all -i kmaster, -m unarchive -a 'src=/home/ansible/bin/ansible-playbooks.tar.gz dest=/home/ansible/bin mode=0755 owner=ansible group=ansible remote_src=yes'"
       su ansible -c "ansible-playbook /home/ansible/bin/playk.yml"
       su ansible -c "/home/ansible/bin/post-install.sh > /home/ansible/bin/post-install.log"
-      su ansible -c "cat /windows_shared/kubernetes/k8sv3/aliases.sh >> /home/ansible/.bashrc"
+      su ansible -c "cat /home/ansible/bin/aliases >> /home/ansible/.bashrc"
       
       # Display SUMMARY and exit
       echo
