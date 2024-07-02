@@ -11,7 +11,8 @@ The infrastructure can either be used as a Kubernetes Cluster or simply as an An
 Updates and upgrades are expected in the near future, with more formal documentation.
 
 Note: For system requirements and important usage formation, please PLEASE READ THE GUIDANCE NOTES at the top of the Vagrantfile.
-As a minimum, for the default cluster with a control plane and two worker nodes, you will require a Windows PC with at leaset 4 CPUs and 40GB of free disk space.
+As a minimum, for the default cluster with a control plane and two worker nodes, you will require a Windows PC with at leaset 6 CPUs, 10 GB RAM and 50 GB of free disk space. Adjust your cluster size based on your system resources. (For a basic PC with 4 CPUs and 8 GB RAM, you could probably handle a cluster with one control plane host and one worker node.)
+
 To log into your cluster after the provisioning, use Putty and ssh into the control plane (192.168.56.30) as user 'ansible' and initial password 'ansible'. 
 Then to view your cluster run:
 
