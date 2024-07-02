@@ -619,7 +619,7 @@ config.vm.define "kmaster" do |kmaster|
       echo "vagrant ssh kmaster"
       echo "and switch user to student with password 'student' once logged in."
       echo
-      echo "***UTA Lab Manager™ version 1.0.5-beta. End of Session***"
+      echo "*UTA Lab Manager™ version 2.0 (Kubernetes Cluster). End of Session*"
     SHELL
 
     # Other kmaster configuration here...
