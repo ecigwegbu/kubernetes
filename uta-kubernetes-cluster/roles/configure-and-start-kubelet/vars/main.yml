@@ -1,0 +1,3 @@
+---
+# vars file for configure-and-start-kubelet
+config_dir: /etc/kubernetes/kubelet-config.d

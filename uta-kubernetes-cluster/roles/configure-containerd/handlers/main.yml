@@ -1,0 +1,6 @@
+---
+# handlers file for configure-containerd
+- name: Restart containerd
+  service:
+    name: containerd
+    state: restarted
