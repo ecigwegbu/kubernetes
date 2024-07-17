@@ -2,7 +2,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# Unix Training Academy Lab Manager™ version 2.0.0 (Kubernetes Cluster - Windows/Powershell edition)
+# Unix Training Academy Lab Manager™ version 2.1.0 (Kubernetes Cluster - Windows/Powershell edition)
 #
 # README:
 #
@@ -590,9 +590,9 @@ config.vm.define "kmaster" do |kmaster|
 
       # Configure the Kubernetes Cluster
       su ansible -c "mkdir -p /home/ansible/bin"
-      su ansible -c "ansible all -i kmaster, -m get_url -a 'url=https://github.com/ecigwegbu/kubernetes/raw/main/uta-kubernetes-cluster/ansible-playbooks.tar.gz dest=/home/ansible/bin mode=0755 owner=ansible group=ansible'"
-      su ansible -c "ansible all -i kmaster, -m unarchive -a 'src=/home/ansible/bin/ansible-playbooks.tar.gz dest=/home/ansible/bin mode=0755 owner=ansible group=ansible remote_src=yes'"
-      su ansible -c "ansible-playbook /home/ansible/bin/playk.yml"
+      su ansible -c "ansible all -i kmaster, -m get_url -a 'url=https://github.com/ecigwegbu/kubernetes/raw/main/uta-kubernetes-cluster/solargeometry-k8s-cluster.tar.gz dest=/home/ansible/bin mode=0755 owner=ansible group=ansible'"
+      su ansible -c "ansible all -i kmaster, -m unarchive -a 'src=/home/ansible/bin/solargeometry-k8s-cluster.tar.gz dest=/home/ansible/bin mode=0755 owner=ansible group=ansible remote_src=yes'"
+      su ansible -c "ansible-playbook /home/ansible/bin/kube-play.yml"
       su ansible -c "/home/ansible/bin/post-install.sh > /home/ansible/bin/post-install.log"
       su ansible -c "cat /home/ansible/bin/aliases >> /home/ansible/.bashrc"
       
@@ -619,7 +619,7 @@ config.vm.define "kmaster" do |kmaster|
       echo "vagrant ssh kmaster"
       echo "and switch user to student with password 'student' once logged in."
       echo
-      echo "*UTA Lab Manager™ version 2.0 (Kubernetes Cluster). End of Session*"
+      echo "*UTA Lab Manager™ version 2.1 (Kubernetes Cluster). End of Session*"
     SHELL
 
     # Other kmaster configuration here...

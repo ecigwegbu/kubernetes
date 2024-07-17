@@ -1,4 +1,4 @@
-UTA Ansible Lab 2.0 - Kubernetes Cluster
+UTA Ansible Lab 2.1 - Kubernetes Cluster
 
 This project creates a Kubernetes Cluster consisting of a Control Plane and up to 26 worker nodes. All nodes are Red Hat Linux Virtual Machines.
 

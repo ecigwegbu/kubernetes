@@ -1,0 +1,25 @@
+---
+- name: Prepare to install Kubeadm
+  hosts: k8snodes
+  become: yes
+  roles:
+    - disable-selinux
+
+    # - install-container-runtime-containerd
+    - download-and-install-containerd-binaries
+    - configure-containerd
+    - install-runc-for-containerd
+    - install-cni-plugins-for-containerd
+
+    - enable-ipv4-packet-forwarding
+    - open-k8s-ports
+    - install-k8s-repo
+    - install-k8s-components
+    - disable-swap
+    - configure-and-start-kubelet
+
+- name: Install Kubeadm
+  hosts: kmaster
+  become: yes
+  roles:
+    - configure-and-init-kubeadm
