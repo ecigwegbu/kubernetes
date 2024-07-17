@@ -1,6 +1,6 @@
 # Ansible Collection - igwegbu.kubernetes_cluster
 
-UTA Ansible Lab 2.1 - Kubernetes Cluster
+UTA Ansible Lab 2.1.2 - Kubernetes Cluster
 
 This project creates a Kubernetes Cluster consisting of a Control Plane and up to 26 worker nodes. All nodes are Red Hat Linux Virtual Machines.
 

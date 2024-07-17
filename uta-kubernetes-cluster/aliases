@@ -1,0 +1,69 @@
+alias lll='ls -larth'
+
+alias petty='pycodestyle'
+alias pettytm='pycodestyle tests models'
+alias bsc='shellcheck'
+alias chm='chmod u+x *.py'
+alias chmtm='chmod -R u+x tests models'
+alias p=python3
+alias vi='vim'
+alias ut='python3 -m unittest discover tests'
+alias ms='mysql -uroot -e '
+alias sstd='semistandard'
+alias ppl='puppet-lint'
+
+alias cdconsole='cd /alx/AirBnB_clone0'
+alias cdstatic='cd /alx/AirBnB_clone'
+alias cddb='cd /alx/AirBnB_clone_v2'
+alias cddeploy='cd /alx/AirBnB_clone_v2'
+alias cdfw='cd /alx/AirBnB_clone_v2'
+alias cdapi='cd /alx/AirBnB_clone_v3'
+alias cddynamic='cd /alx/AirBnB_clone_v4'
+alias dbenv='HBNB_MYSQL_USER=hbnb_dev HBNB_MYSQL_PWD=hbnb_dev_pwd HBNB_MYSQL_HOST=localhost HBNB_MYSQL_DB=hbnb_dev_db HBNB_TYPE_STORAGE=db'
+
+alias ti='terraform init'
+alias tp='terraform plan'
+alias ta='terraform apply'
+alias td='terraform destroy'
+
+alias ap='ansible-playbook'
+alias apc='ansible-playbook -C'
+alias apsc='ansible-playbook --syntax-check'
+
+alias kc=kubectl
+alias kl=kubelet
+alias mk=minikube
+
+alias sshk='ssh ansible@kmaster'
+alias sshka='ssh ansible@knodea'
+alias sshkb='ssh ansible@knodeb'
+
+PS1="\[\e[1m\][\u@\h \[\e[38;5;214m\]\W\[\e[0m\]\[\e[1m\]]\$ \[\e[0m\]"
+complete -C '/usr/local/bin/aws_completer' aws
+
+# Kubectl
+source /usr/share/bash-completion/bash_completion
+kubectl completion bash | sudo tee /etc/bash_completion.d/kubectl > /dev/null
+complete -o default -F __start_kubectl kc
+if [[ -f /etc/bash_completion.d/kubectl ]]; then
+  source /etc/bash_completion.d/kubectl
+fi
+
+# Enable ansible bash completion
+mkdir -p /etc/bash_completion.d
+if ! [[ -f /etc/bash_completion.d/ansible ]]; then
+  sudo  wget https://raw.githubusercontent.com/dysosmus/ansible-completion/master/ansible-completion.bash -O /etc/bash_completion.d/ansible
+fi
+source /etc/bash_completion.d/ansible
+
+# Vim comment line colour
+if ! [[ -f /home/ansible/.vimrc ]] ||  \
+  ! grep -q 'highlight Comment ctermfg=LightGray guifg=#B0B0B0' ~/.vimrc; then
+cat <<-'EOF' >> ~/.vimrc
+    " Ensure syntax highlighting is enabled
+    syntax on
+
+    " Define a custom color for comments
+    highlight Comment ctermfg=LightGray guifg=#B0B0B0
+EOF
+fi
