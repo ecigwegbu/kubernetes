@@ -9,7 +9,7 @@ echo "Running the ogivc deploy script in: $THIS_DIR"
 # Create the manifest files for deploying the ogivc project manually in a Kubernetes cluster
 
 # Create the Secrets manifest:
-kubectl create secret generic ogivc --dry-run=client -o yaml --from-env-file $HOME/.secrets/OGIVC_SECRET_FILE_FAKE.INI > $THIS_DIR/ogivc-secrets.yml
+kubectl create secret generic ogivc --dry-run=client -o yaml --from-env-file $HOME/.secrets/OGIVC_SECRET_FILE_FAKE.INI > $THIS_DIR/ogivc-secrets-fake.yml
 
 # Create the ConfigMap manifest:
 kubectl create cm ogivc --dry-run=client -o yaml --from-env-file $HOME/.secrets/OGIVC_CM_FILE.INI > $THIS_DIR/ogivc-cm.yml
@@ -29,7 +29,7 @@ sed -i '/resources: {}/a\
 kubectl create service nodeport ogivc --node-port=32300 --tcp=3300:3300 --dry-run=client -o yaml > $THIS_DIR/ogivc-service.yml
 
 # Deploy the app
-kubectl apply -f $THIS_DIR/ogivc-secrets.yml
+kubectl apply -f $THIS_DIR/ogivc-secrets-fake.yml
 kubectl apply -f $THIS_DIR/ogivc-cm.yml
 kubectl apply -f $THIS_DIR/ogivc-deploy.yml
 kubectl apply -f $THIS_DIR/ogivc-service.yml

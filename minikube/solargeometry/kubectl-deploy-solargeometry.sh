@@ -9,7 +9,7 @@ THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "Running the solargeometry deploy script in: $THIS_DIR"
 
 # Create the Secrets manifest:
-kubectl create secret generic solargeometry --dry-run=client -o yaml --from-env-file $HOME/.secrets/SOLARGEOMETRY_ENV_FILE_FAKE.INI > $THIS_DIR/solargeometry-secrets.yml
+kubectl create secret generic solargeometry --dry-run=client -o yaml --from-env-file $HOME/.secrets/SOLARGEOMETRY_ENV_FILE_FAKE.INI > $THIS_DIR/solargeometry-secrets-fake.yml
 
 # Create the deployment:
 kubectl create deploy solargeometry --port=5004 --image=igwegbu/solargeometry:latest --replicas=3 --dry-run=client -o yaml > $THIS_DIR/solargeometry-deploy.yml
@@ -24,7 +24,7 @@ sed -i '/resources: {}/a\
 kubectl create service nodeport solargeometry --node-port=32504 --tcp=5004:5004 --dry-run=client -o yaml > $THIS_DIR/solargeometry-service.yml
 
 # Deploy the app
-kubectl apply -f $THIS_DIR/solargeometry-secrets.yml
+kubectl apply -f $THIS_DIR/solargeometry-secrets-fake.yml
 kubectl apply -f $THIS_DIR/solargeometry-deploy.yml
 kubectl apply -f $THIS_DIR/solargeometry-service.yml
 
