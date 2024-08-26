@@ -1,0 +1,8 @@
+apiVersion: v1
+data:
+  NEXTAUTH_URL: http://localhost:3300
+  NEXTAUTH_URL_INTERNAL: http://localhost:3300
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: ogivc

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: ogivc
+  name: ogivc
+spec:
+  ports:
+  - name: 3300-3300
+    nodePort: 32300
+    port: 3300
+    protocol: TCP
+    targetPort: 3300
+  selector:
+    app: ogivc
+  type: NodePort
+status:
+  loadBalancer: {}
