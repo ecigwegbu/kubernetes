@@ -5,6 +5,7 @@
 kubectl delete -f solargeometry/solargeometry-secrets-fake.yml
 kubectl delete -f solargeometry/solargeometry-deploy.yml
 kubectl delete -f solargeometry/solargeometry-service.yml
+kubectl delete -f solargeometry/solargeometry-volume.yml
 
 # Use kubectl to manually tear down the deployed ogivc app
 kubectl delete -f ogivc/ogivc-secrets-fake.yml

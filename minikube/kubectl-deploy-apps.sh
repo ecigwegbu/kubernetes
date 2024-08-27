@@ -7,6 +7,7 @@ else
 	echo 'Solargeometry app installer ./solargeometry/kubectl-deploy-solargeometry.sh not found.'
 	exit 1
 fi
+echo
 if [ -r ./ogivc/kubectl-deploy-ogivc.sh ]; then
 	. ./ogivc/kubectl-deploy-ogivc.sh
 else

@@ -18,12 +18,15 @@ kubectl create cm ogivc --dry-run=client -o yaml --from-env-file $HOME/.secrets/
 kubectl create deploy ogivc --port=5004 --image=igwegbu/ogivc:latest --replicas=3 --dry-run=client -o yaml > $THIS_DIR/ogivc-deploy.yml
 
 # Insert the envFrom attribute in the correct location in the deployment YAML
-sed -i '/resources: {}/a\
+sed '/resources: {}/a\
         envFrom:\
         - secretRef:\
             name: ogivc \
-        - configMapRef:\
-            name: ogivc' $THIS_DIR/ogivc-deploy.yml
+        - configMapRef: \
+            name: ogivc \
+' $THIS_DIR/ogivc-deploy.yml > $THIS_DIR/temp.yml
+
+mv $THIS_DIR/temp.yml $THIS_DIR/ogivc-deploy.yml
 
 # Create the service:
 kubectl create service nodeport ogivc --node-port=32300 --tcp=3300:3300 --dry-run=client -o yaml > $THIS_DIR/ogivc-service.yml

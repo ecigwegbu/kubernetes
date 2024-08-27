@@ -26,6 +26,6 @@ spec:
         envFrom:
         - secretRef:
             name: ogivc 
-        - configMapRef:
-            name: ogivc
+        - configMapRef: 
+            name: ogivc 
 status: {}
