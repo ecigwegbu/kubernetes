@@ -6,6 +6,9 @@ THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Now you can use $THIS_DIR to reference the script's directory
 echo "Running the ogivc deploy script in: $THIS_DIR"
 
+mkdir -p $HOME/.secrets
+cp -r $THIS_DIR/.secrets-fake/* $HOME/.secrets/
+
 # Create the manifest files for deploying the ogivc project manually in a Kubernetes cluster
 
 # Create the Secrets manifest:

@@ -27,10 +27,11 @@ spec:
         - secretRef:
             name: solargeometry
         volumeMounts:
-        - mountPath: /myapp/app-data
+        - mountPath: /app/app-data
           name: solargeometry
       volumes:
       - name: solargeometry
         persistentVolumeClaim:
           claimName: solargeometry
+
 status: {}

@@ -8,8 +8,11 @@ THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Now you can use $THIS_DIR to reference the script's directory
 echo "Running the solargeometry deploy script in: $THIS_DIR"
 
+mkdir -p $HOME/.secrets
+cp -r $THIS_DIR/.secrets-fake/* $HOME/.secrets/ 
+
 # Create the Secrets manifest:
-kubectl create secret generic solargeometry --dry-run=client -o yaml --from-env-file $HOME/.secrets/SOLARGEOMETRY_ENV_FILE_FAKE.INI > $THIS_DIR/solargeometry-secrets-fake.yml
+kubectl create secret generic solargeometry --dry-run=client -o yaml --from-env-file $HOME/.secrets/SOLARGEOMETRY_SECRET_FILE_FAKE.INI > $THIS_DIR/solargeometry-secrets-fake.yml
 
 # Create the deployment:
 kubectl create deploy solargeometry --port=5004 --image=igwegbu/solargeometry:latest --replicas=3 --dry-run=client -o yaml > $THIS_DIR/solargeometry-deploy.yml
@@ -25,7 +28,7 @@ sed '/resources: {}/a\
         - secretRef:\
             name: solargeometry\
         volumeMounts:\
-        - mountPath: /myapp/app-data\
+        - mountPath: /app/app-data\
           name: solargeometry\
       volumes:\
       - name: solargeometry\
@@ -44,6 +47,6 @@ kubectl apply -f $THIS_DIR/solargeometry-deploy.yml
 kubectl apply -f $THIS_DIR/solargeometry-service.yml
 
 echo "Please wait..."
-sleep 10
+sleep 15
 kubectl get rs -o wide
 kubectl get deploy solargeometry -o wide

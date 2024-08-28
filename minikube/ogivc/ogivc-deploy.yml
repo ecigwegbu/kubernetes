@@ -28,4 +28,5 @@ spec:
             name: ogivc 
         - configMapRef: 
             name: ogivc 
+
 status: {}
