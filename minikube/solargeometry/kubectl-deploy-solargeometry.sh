@@ -11,6 +11,9 @@ echo "Running the solargeometry deploy script in: $THIS_DIR"
 mkdir -p $HOME/.secrets
 cp -r $THIS_DIR/.secrets-fake/* $HOME/.secrets/ 
 
+# Manual install with docker:
+# $ winpty docker run -it --name solargeometry --env-file=$HOME/.secrets/SOLARGEOMETRY_SECRET_FILE_FAKE.INI -p 5004:5004 igwegbu/solargeometry:latest
+
 # Create the Secrets manifest:
 kubectl create secret generic solargeometry --dry-run=client -o yaml --from-env-file $HOME/.secrets/SOLARGEOMETRY_SECRET_FILE_FAKE.INI > $THIS_DIR/solargeometry-secrets-fake.yml
 
@@ -50,3 +53,6 @@ echo "Please wait..."
 sleep 15
 kubectl get rs -o wide
 kubectl get deploy solargeometry -o wide
+kubectl get svc -o wide
+kubectl get pod -o wide
+

@@ -44,4 +44,6 @@ echo "Please wait..."
 sleep 15
 kubectl get rs -o wide
 kubectl get deploy ogivc -o wide
+kubectl get pod -o wide
+kubectl get svc -o wide
 
