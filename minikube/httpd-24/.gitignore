@@ -1,0 +1,8 @@
+redhat-com-secrets.yml
+redhat-io-secrets.yml
+*secret*
+*secrets-fake.yml
+*secrets.yml
+docker-secret.yml
+redhat-io.yml
+redhat-com.yml

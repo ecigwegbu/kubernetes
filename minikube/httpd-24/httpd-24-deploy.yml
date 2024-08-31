@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: httpd-24
+  name: httpd-24
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpd-24
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: httpd-24
+    spec:
+      containers:
+      - image: registry.access.redhat.com/ubi9/httpd-24:latest
+        name: httpd-24
+        ports:
+        - containerPort: 8080
+        resources: {}
+        volumeMounts:
+        - mountPath: /var/www
+          name: httpd-24
+      imagePullSecrets:
+        - name: redhat-com
+      volumes:
+      - name: httpd-24
+        persistentVolumeClaim:
+          claimName: httpd-24
+
+status: {}
