@@ -12,7 +12,7 @@ echo "Running the http-24 deploy script in: $THIS_DIR"
 kubectl create secret docker-registry redhat-com --docker-server=https://registry.access.redhat.com --docker-username=$RHSM_USER --docker-password=$RHSM_PASS --dry-run=client -o yaml > $THIS_DIR/redhat-com-secrets.yml
 # kubectl create secret docker-registry redhat-io --docker-server=https://registry.redhat.io --docker-username=$RHSM_USER --docker-password=$RHSM_PASS --dry-run=client -o yaml > $THIS_DIR/redhat-io-secrets.yml
 # podman login --authfile=$HOME/.config/containers/auth.json registry.access.redhat.com
-# kubectl create secret generic redhat-com --from-file=.dockerconfigjason=$HOME/.config/containers/auth.json --dry-run=client -o yaml > $THIS_DIR/redhat-com-secrets.yml
+# kubectl create secret generic redhat-com --from-file=.dockerconfigjason=$HOME/.config/containers/auth.json --type=kubernetes.io/dockerconfig.json --dry-run=client -o yaml > $THIS_DIR/redhat-com-secrets.yml  # this is an alternative method that requires login to Red Hat and/or  registry(ies) first
 kubectl apply -f $THIS_DIR/redhat-com-secrets.yml
 
 # Deploy the persistent volume (for the website content)
@@ -53,20 +53,20 @@ kubectl apply -f $THIS_DIR/httpd-24-service.yml
 # View resources
 echo "Please wait..."
 sleep 15
-echo -e "\n####### Nodes ########"
+echo -e "\nNodes... "
 kubectl get node -o wide
-echo -e "\n####### Deployments ########"
+echo -e "\nDeployments..."
 kubectl get deploy -o wide
-echo -e "\n####### Services ########"
+echo -e "\nServices..."
 kubectl get svc -o wide
-echo -e "\n####### Pods ########"
+echo -e "\nPods..."
 kubectl get pod -o wide
 echo
 
 # Display Page
 # sleep 15
-# HTTPD24_SVC=$(minikube service httpd-24 --url)
-# curl -I $HTTPD24_SVC
-K8s_PORT=$(kubectl get service httpd-24 -o wide | grep httpd-24 | awk '{print $5}' | awk -F: '{print $2}' | awk -F/ '{print $1}')
-echo "knode.igwegbu.tech:$K8s_PORT"
-curl knodea.igwegbu.tech:$K8s_PORT
+HTTPD24_SVC=$(minikube service httpd-24 --url)
+curl -I $HTTPD24_SVC
+# K8s_PORT=$(kubectl get service httpd-24 -o wide | grep httpd-24 | awk '{print $5}' | awk -F: '{print $2}' | awk -F/ '{print $1}')
+# echo "knode.igwegbu.tech:$K8s_PORT"
+# curl knodea.igwegbu.tech:$K8s_PORT

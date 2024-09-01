@@ -33,4 +33,4 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - knodea.igwegbu.tech
+          - minikube
